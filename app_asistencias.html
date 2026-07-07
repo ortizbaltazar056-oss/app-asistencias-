@@ -405,7 +405,7 @@ function paso1Siguiente() {
   window.scrollTo(0, 0);
 }
 
-// ── PASO 2: PREVISUALIZAR FOTO ──
+// ── PASO 2: PREVISUALIZAR Y COMPRIMIR FOTO ──
 function previsualizarFoto(input) {
   const file = input.files[0];
   if (!file) return;
@@ -415,8 +415,22 @@ function previsualizarFoto(input) {
     const preview = document.getElementById("preview-img");
     preview.src   = e.target.result;
     preview.style.display = "block";
-    base64Foto = e.target.result.split(",")[1];
-    document.getElementById("btn-extraer").disabled = false;
+
+    // Comprimir la imagen antes de mandarla
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const maxW = 1200;
+      const scale = img.width > maxW ? maxW / img.width : 1;
+      canvas.width  = img.width  * scale;
+      canvas.height = img.height * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const compressed = canvas.toDataURL("image/jpeg", 0.7);
+      base64Foto = compressed.split(",")[1];
+      document.getElementById("btn-extraer").disabled = false;
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
