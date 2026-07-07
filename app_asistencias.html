@@ -353,7 +353,7 @@
 
 <script>
 // ── CONFIGURACIÓN ── pega aquí la URL de tu Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhLpsLkoA7lSS3qpKaZrpGKhoUfH0bD_z3WAsAewqBLX-ZkLSDwWcow5KRan7j1Kvpsg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfgjpSx2TjZ79Nfi8S6pdEOeC07CEK3Q6AZXQ-aDLF3lS4AcBTXBVMP37PmT4TgsZH/exec";
 
 // ── ESTADO GLOBAL ──
 let datosEvento = {};
@@ -428,12 +428,12 @@ function procesarFoto() {
   setStep(3);
   window.scrollTo(0, 0);
 
-  const fd1 = new FormData();
-  fd1.append("payload", JSON.stringify({ accion: "extraer", imagen: base64Foto }));
-  fetch(SCRIPT_URL, { method: "POST", body: fd1 })
-  .then(r => r.text())
-  .then(txt => {
-    const data = JSON.parse(txt);
+  const params1 = new URLSearchParams();
+  params1.append("accion", "extraer");
+  params1.append("imagen", base64Foto);
+  fetch(SCRIPT_URL + "?" + params1.toString())
+  .then(r => r.json())
+  .then(data => {
     document.getElementById("sec-spinner").style.display = "none";
     if (!data.ok) throw new Error(data.error || "Error desconocido");
     mostrarRevision(data.registros);
@@ -510,12 +510,13 @@ function enviarASheets() {
   btn.disabled = true;
   btn.textContent = "Enviando...";
 
-  const fd2 = new FormData();
-  fd2.append("payload", JSON.stringify({ accion: "guardar", evento: datosEvento, registros }));
-  fetch(SCRIPT_URL, { method: "POST", body: fd2 })
-  .then(r => r.text())
-  .then(txt => {
-    const data = JSON.parse(txt);
+  const params2 = new URLSearchParams();
+  params2.append("accion", "guardar");
+  params2.append("evento", JSON.stringify(datosEvento));
+  params2.append("registros", JSON.stringify(registros));
+  fetch(SCRIPT_URL + "?" + params2.toString())
+  .then(r => r.json())
+  .then(data => {
     if (!data.ok) throw new Error(data.error || "Error al guardar");
     document.getElementById("ok-stat").textContent =
       data.registros + " personas registradas";
