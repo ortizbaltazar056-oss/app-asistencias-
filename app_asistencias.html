@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Asistencias">
+  <title>Registro de Asistencia</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #F0F2F7;
+      min-height: 100vh;
+      color: #1B2A4A;
+    }
+
+    /* ── TOP BAR ── */
+    .topbar {
+      background: #1B2A4A;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar-title { font-size: 16px; font-weight: 600; color: white; flex: 1; }
+    .topbar-sub   { font-size: 11px; color: #C9A24B; margin-top: 2px; }
+
+    /* ── STEP INDICATOR ── */
+    .steps {
+      display: flex;
+      align-items: center;
+      background: white;
+      padding: 12px 16px;
+      border-bottom: 1px solid #E0E5F0;
+      gap: 0;
+    }
+    .step-dot {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; flex-shrink: 0;
+      transition: all .3s;
+    }
+    .step-dot.done   { background: #2E7D5B; color: white; }
+    .step-dot.active { background: #1B2A4A; color: white; }
+    .step-dot.wait   { background: #E0E5F0; color: #9BA8C0; }
+    .step-line { flex: 1; height: 2px; background: #E0E5F0; transition: background .3s; }
+    .step-line.done { background: #2E7D5B; }
+
+    /* ── BODY ── */
+    .body { padding: 16px; max-width: 500px; margin: 0 auto; }
+
+    /* ── CARDS ── */
+    .card {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 8px rgba(27,42,74,.07);
+    }
+    .card-label {
+      font-size: 11px; font-weight: 600; color: #5B6B85;
+      text-transform: uppercase; letter-spacing: .06em;
+      margin-bottom: 12px;
+    }
+
+    /* ── INPUTS ── */
+    .field { margin-bottom: 12px; }
+    .field label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: #1B2A4A; margin-bottom: 5px;
+    }
+    .field label .req { color: #C0573A; margin-left: 2px; }
+    input[type="text"], input[type="tel"], input[type="date"], select {
+      width: 100%; padding: 11px 13px;
+      border: 1.5px solid #D0D7E5; border-radius: 10px;
+      font-size: 15px; color: #1B2A4A; background: white;
+      -webkit-appearance: none; appearance: none;
+      transition: border-color .2s;
+    }
+    input:focus, select:focus {
+      outline: none; border-color: #1B2A4A;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%; padding: 14px; border: none;
+      border-radius: 12px; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: opacity .2s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: #1B2A4A; color: white; }
+    .btn-primary:disabled { background: #9BA8C0; cursor: not-allowed; }
+    .btn-secondary {
+      background: white; color: #1B2A4A;
+      border: 1.5px solid #D0D7E5; margin-top: 8px;
+    }
+    .btn-gold { background: #C9A24B; color: white; }
+
+    /* ── UPLOAD ZONE ── */
+    .upload-zone {
+      border: 2px dashed #D0D7E5; border-radius: 12px;
+      padding: 28px 16px; text-align: center; cursor: pointer;
+      transition: all .2s; background: #F8F9FC;
+    }
+    .upload-zone:active { background: #EEF2FF; border-color: #1B2A4A; }
+    .upload-icon { font-size: 40px; margin-bottom: 8px; }
+    .upload-text { font-size: 15px; font-weight: 500; color: #1B2A4A; margin-bottom: 4px; }
+    .upload-sub  { font-size: 12px; color: #9BA8C0; }
+    #preview-img {
+      width: 100%; border-radius: 10px; margin-top: 12px;
+      border: 1px solid #E0E5F0; display: none; max-height: 200px;
+      object-fit: cover;
+    }
+
+    /* ── SPINNER ── */
+    .spinner-wrap {
+      display: none; text-align: center; padding: 32px 16px;
+    }
+    .spinner {
+      width: 44px; height: 44px; border: 4px solid #E0E5F0;
+      border-top-color: #1B2A4A; border-radius: 50%;
+      animation: spin .8s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner-text { font-size: 14px; color: #5B6B85; }
+
+    /* ── TABLE DE REVISIÓN ── */
+    .review-header {
+      display: grid; grid-template-columns: 1fr .7fr .7fr 28px;
+      gap: 6px; margin-bottom: 6px;
+    }
+    .review-header span {
+      font-size: 10px; font-weight: 600; color: #5B6B85;
+      text-transform: uppercase; letter-spacing: .04em;
+    }
+    .review-row {
+      display: grid; grid-template-columns: 1fr .7fr .7fr 28px;
+      gap: 6px; margin-bottom: 6px; align-items: center;
+    }
+    .review-row input {
+      padding: 7px 9px; font-size: 13px;
+      border: 1px solid #D0D7E5; border-radius: 8px;
+    }
+    .del-btn {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #FCE8EC; border: none; color: #C0573A;
+      font-size: 16px; cursor: pointer; display: flex;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .count-badge {
+      display: inline-block; background: #E8EDF5; color: #1B2A4A;
+      font-size: 12px; font-weight: 600; padding: 3px 10px;
+      border-radius: 20px; margin-bottom: 10px;
+    }
+
+    /* ── SUCCESS ── */
+    .success-wrap {
+      display: none; text-align: center; padding: 32px 16px;
+    }
+    .success-icon { font-size: 64px; margin-bottom: 12px; }
+    .success-title { font-size: 20px; font-weight: 700; color: #1B2A4A; margin-bottom: 8px; }
+    .success-stat {
+      background: #E8F5EE; color: #2E7D5B; font-size: 15px;
+      font-weight: 600; padding: 8px 20px; border-radius: 20px;
+      display: inline-block; margin: 8px 0 16px;
+    }
+    .success-sub { font-size: 13px; color: #5B6B85; line-height: 1.6; margin-bottom: 20px; }
+
+    /* ── TIP BOX ── */
+    .tip {
+      background: #F0F6FF; border-left: 3px solid #1B2A4A;
+      border-radius: 0 8px 8px 0; padding: 10px 13px;
+      font-size: 12px; color: #5B6B85; line-height: 1.5;
+      margin-top: 12px;
+    }
+
+    /* ── HIDDEN ── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div class="topbar">
+  <div>
+    <div class="topbar-title">Registro de Asistencia</div>
+    <div class="topbar-sub">Coordinación de Agenda · Campaña</div>
+  </div>
+</div>
+
+<!-- ── STEPS ── -->
+<div class="steps" id="steps-bar">
+  <div class="step-dot active" id="sd1">1</div>
+  <div class="step-line" id="sl1"></div>
+  <div class="step-dot wait" id="sd2">2</div>
+  <div class="step-line" id="sl2"></div>
+  <div class="step-dot wait" id="sd3">3</div>
+  <div class="step-line" id="sl3"></div>
+  <div class="step-dot wait" id="sd4">✓</div>
+</div>
+
+<div class="body">
+
+  <!-- ════ PASO 1: DATOS DEL EVENTO ════ -->
+  <div id="sec-evento">
+    <div class="card">
+      <div class="card-label">📅 Paso 1 — Datos del evento</div>
+
+      <div class="field">
+        <label>Nombre del evento <span class="req">*</span></label>
+        <input type="text" id="ev-nombre" placeholder="Ej. Mitin colonia La Joya">
+      </div>
+
+      <div class="field">
+        <label>Municipio <span class="req">*</span></label>
+        <select id="ev-municipio">
+          <option value="">Selecciona el municipio...</option>
+          <option>Zacatecas capital</option>
+          <option>Guadalupe</option>
+          <option>Fresnillo</option>
+          <option>Jerez</option>
+          <option>Calera</option>
+          <option>Loreto</option>
+          <option>Río Grande</option>
+          <option>Villanueva</option>
+          <option>Sombrerete</option>
+          <option>Tlaltenango</option>
+          <option>Otro municipio</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Fecha del evento <span class="req">*</span></label>
+        <input type="date" id="ev-fecha">
+      </div>
+
+      <div class="field">
+        <label>Tipo de evento <span class="req">*</span></label>
+        <select id="ev-tipo">
+          <option value="">Selecciona el tipo...</option>
+          <option>Mitin</option>
+          <option>Reunión sectorial</option>
+          <option>Visita domiciliaria</option>
+          <option>Reunión con líderes</option>
+          <option>Evento empresarial</option>
+          <option>Rueda de prensa</option>
+          <option>Otro</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Tu nombre (capturista) <span class="req">*</span></label>
+        <input type="text" id="ev-capturista" placeholder="¿Quién está capturando?">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="paso1Siguiente()">
+      Continuar →
+    </button>
+
+    <div class="tip">
+      💡 Llena estos datos una sola vez al llegar al evento. Se asignan automáticamente a todos los registros de esta hoja.
+    </div>
+  </div>
+
+  <!-- ════ PASO 2: FOTOGRAFÍA ════ -->
+  <div id="sec-foto" class="hidden">
+    <div class="card">
+      <div class="card-label">📷 Paso 2 — Fotografía la hoja</div>
+
+      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">Tomar foto o subir imagen</div>
+        <div class="upload-sub">La hoja debe estar plana · buena luz · sin flash</div>
+      </div>
+
+      <input type="file" id="file-input" accept="image/*"
+             capture="environment" style="display:none"
+             onchange="previsualizarFoto(this)">
+
+      <img id="preview-img" alt="Vista previa de la hoja">
+    </div>
+
+    <button class="btn btn-primary" id="btn-extraer"
+            onclick="procesarFoto()" disabled>
+      Extraer datos con IA →
+    </button>
+    <button class="btn btn-secondary" onclick="volverPaso(1)">
+      ← Regresar
+    </button>
+
+    <div class="tip">
+      💡 Consejos para una buena foto: pon la hoja sobre una superficie oscura, sostén el celular paralelo a la hoja y no uses flash.
+    </div>
+  </div>
+
+  <!-- ════ SPINNER ════ -->
+  <div class="spinner-wrap" id="sec-spinner">
+    <div class="spinner"></div>
+    <div class="spinner-text">Leyendo la hoja con IA...<br>Puede tardar entre 5 y 15 segundos</div>
+  </div>
+
+  <!-- ════ PASO 3: REVISIÓN ════ -->
+  <div id="sec-revision" class="hidden">
+    <div class="card">
+      <div class="card-label">✏️ Paso 3 — Revisa y corrige los datos</div>
+      <div class="count-badge" id="count-badge">0 personas extraídas</div>
+
+      <div class="review-header">
+        <span>Nombre completo</span>
+        <span>Teléfono</span>
+        <span>Colonia</span>
+        <span></span>
+      </div>
+
+      <div id="review-rows"></div>
+    </div>
+
+    <button class="btn btn-gold" onclick="enviarASheets()" id="btn-enviar">
+      ✓ Confirmar y enviar a Sheets
+    </button>
+    <button class="btn btn-secondary" onclick="volverPaso(2)">
+      ← Tomar otra foto
+    </button>
+
+    <div class="tip">
+      💡 Todos los campos son editables. Si algo está mal leído, corrígelo aquí antes de enviar. Toca la ✕ para eliminar un renglón que no sirva.
+    </div>
+  </div>
+
+  <!-- ════ PASO 4: ÉXITO ════ -->
+  <div class="success-wrap" id="sec-ok">
+    <div class="success-icon">✅</div>
+    <div class="success-title">¡Registros enviados!</div>
+    <div class="success-stat" id="ok-stat">0 personas registradas</div>
+    <div class="success-sub" id="ok-sub">Los datos ya están en la base de campaña.</div>
+
+    <button class="btn btn-primary" onclick="nuevaHoja()">
+      + Registrar otra hoja del mismo evento
+    </button>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="nuevoEvento()">
+      Iniciar nuevo evento
+    </button>
+  </div>
+
+</div><!-- /body -->
+
+<script>
+// ── CONFIGURACIÓN ── pega aquí la URL de tu Apps Script
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhLpsLkoA7lSS3qpKaZrpGKhoUfH0bD_z3WAsAewqBLX-ZkLSDwWcow5KRan7j1Kvpsg/exec";
+
+// ── ESTADO GLOBAL ──
+let datosEvento = {};
+let base64Foto  = "";
+
+// ── UTILIDADES DE PASOS ──
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    const dot  = document.getElementById("sd" + i);
+    const line = document.getElementById("sl" + i);
+    if (!dot) return;
+    dot.className  = "step-dot " + (i < n ? "done" : i === n ? "active" : "wait");
+    dot.textContent = i < n ? "✓" : i === 4 ? "✓" : String(i);
+    if (line) line.className = "step-line " + (i < n ? "done" : "");
+  });
+}
+
+function showOnly(secId) {
+  ["sec-evento","sec-foto","sec-spinner","sec-revision","sec-ok"]
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.toggle("hidden", id !== secId);
+      if (el && id === "sec-spinner") el.style.display = id === secId ? "block" : "none";
+      if (el && id === "sec-ok")      el.style.display = id === secId ? "block" : "none";
+    });
+}
+
+function volverPaso(n) {
+  if (n === 1) { showOnly("sec-evento"); setStep(1); }
+  if (n === 2) { showOnly("sec-foto");   setStep(2); }
+}
+
+// ── PASO 1: VALIDAR EVENTO ──
+function paso1Siguiente() {
+  const nombre     = document.getElementById("ev-nombre").value.trim();
+  const municipio  = document.getElementById("ev-municipio").value;
+  const fecha      = document.getElementById("ev-fecha").value;
+  const tipo       = document.getElementById("ev-tipo").value;
+  const capturista = document.getElementById("ev-capturista").value.trim();
+
+  if (!nombre || !municipio || !fecha || !tipo || !capturista) {
+    alert("Por favor completa todos los campos antes de continuar.");
+    return;
+  }
+
+  datosEvento = { nombre, municipio, fecha, tipo, capturista };
+  showOnly("sec-foto");
+  setStep(2);
+  window.scrollTo(0, 0);
+}
+
+// ── PASO 2: PREVISUALIZAR FOTO ──
+function previsualizarFoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const preview = document.getElementById("preview-img");
+    preview.src   = e.target.result;
+    preview.style.display = "block";
+    base64Foto = e.target.result.split(",")[1];
+    document.getElementById("btn-extraer").disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ── PASO 2 → 3: PROCESAR CON IA ──
+function procesarFoto() {
+  document.getElementById("sec-foto").classList.add("hidden");
+  document.getElementById("sec-spinner").style.display = "block";
+  setStep(3);
+  window.scrollTo(0, 0);
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accion: "extraer", imagen: base64Foto })
+  })
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById("sec-spinner").style.display = "none";
+    if (!data.ok) throw new Error(data.error || "Error desconocido");
+    mostrarRevision(data.registros);
+  })
+  .catch(err => {
+    document.getElementById("sec-spinner").style.display = "none";
+    showOnly("sec-foto");
+    setStep(2);
+    alert("No se pudo procesar la imagen.\n\nVerifica tu conexión a internet e intenta de nuevo.\n\nError: " + err.message);
+  });
+}
+
+// ── PASO 3: MOSTRAR REVISIÓN ──
+function mostrarRevision(registros) {
+  const container = document.getElementById("review-rows");
+  container.innerHTML = "";
+
+  registros.forEach((r, i) => {
+    const row = document.createElement("div");
+    row.className = "review-row";
+    row.id = "row-" + i;
+    row.innerHTML = `
+      <input type="text" id="n${i}" value="${esc(r.nombre)}"   placeholder="Nombre">
+      <input type="tel"  id="t${i}" value="${esc(r.telefono)}" placeholder="Teléfono">
+      <input type="text" id="c${i}" value="${esc(r.colonia)}"  placeholder="Colonia">
+      <button class="del-btn" onclick="eliminarFila(${i})">✕</button>`;
+    container.appendChild(row);
+  });
+
+  const total = registros.length;
+  document.getElementById("count-badge").textContent =
+    total + (total === 1 ? " persona extraída" : " personas extraídas");
+
+  showOnly("sec-revision");
+  setStep(3);
+  window.scrollTo(0, 0);
+}
+
+function esc(s) {
+  return (s || "").replace(/"/g, "&quot;").replace(/</g, "&lt;");
+}
+
+function eliminarFila(i) {
+  const row = document.getElementById("row-" + i);
+  if (row) row.remove();
+  actualizarConteo();
+}
+
+function actualizarConteo() {
+  const filas = document.querySelectorAll(".review-row").length;
+  document.getElementById("count-badge").textContent =
+    filas + (filas === 1 ? " persona" : " personas");
+}
+
+// ── PASO 3 → 4: ENVIAR A SHEETS ──
+function enviarASheets() {
+  const filas = document.querySelectorAll(".review-row");
+  const registros = [];
+
+  filas.forEach(fila => {
+    const id = fila.id.replace("row-", "");
+    const n  = (document.getElementById("n" + id)?.value || "").trim();
+    const t  = (document.getElementById("t" + id)?.value || "").trim();
+    const c  = (document.getElementById("c" + id)?.value || "").trim();
+    if (n || t) registros.push({ nombre: n, telefono: t, colonia: c });
+  });
+
+  if (registros.length === 0) {
+    alert("No hay registros para enviar. Agrega al menos una persona.");
+    return;
+  }
+
+  const btn = document.getElementById("btn-enviar");
+  btn.disabled = true;
+  btn.textContent = "Enviando...";
+
+  fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ accion: "guardar", evento: datosEvento, registros })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (!data.ok) throw new Error(data.error || "Error al guardar");
+    document.getElementById("ok-stat").textContent =
+      data.registros + " personas registradas";
+    document.getElementById("ok-sub").textContent =
+      "Evento: " + datosEvento.nombre + " · " + datosEvento.municipio;
+    showOnly("sec-ok");
+    setStep(4);
+    window.scrollTo(0, 0);
+  })
+  .catch(err => {
+    btn.disabled = false;
+    btn.textContent = "✓ Confirmar y enviar a Sheets";
+    alert("Error al enviar los datos.\n\nVerifica tu conexión e intenta de nuevo.\n\nError: " + err.message);
+  });
+}
+
+// ── NUEVA HOJA (mismo evento) ──
+function nuevaHoja() {
+  document.getElementById("review-rows").innerHTML = "";
+  document.getElementById("preview-img").style.display = "none";
+  document.getElementById("file-input").value = "";
+  document.getElementById("btn-extraer").disabled = true;
+  base64Foto = "";
+  showOnly("sec-foto");
+  setStep(2);
+  window.scrollTo(0, 0);
+}
+
+// ── NUEVO EVENTO ──
+function nuevoEvento() {
+  document.getElementById("ev-nombre").value     = "";
+  document.getElementById("ev-municipio").value  = "";
+  document.getElementById("ev-fecha").value      = "";
+  document.getElementById("ev-tipo").value       = "";
+  document.getElementById("ev-capturista").value = "";
+  document.getElementById("review-rows").innerHTML = "";
+  document.getElementById("preview-img").style.display = "none";
+  document.getElementById("file-input").value = "";
+  document.getElementById("btn-extraer").disabled = true;
+  base64Foto  = "";
+  datosEvento = {};
+  showOnly("sec-evento");
+  setStep(1);
+  window.scrollTo(0, 0);
+}
+
+// ── FECHA DE HOY POR DEFECTO ──
+document.getElementById("ev-fecha").value =
+  new Date().toISOString().split("T")[0];
+</script>
+</body>
+</html>
