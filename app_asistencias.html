@@ -353,7 +353,9 @@
 
 <script>
 // ── CONFIGURACIÓN ── pega aquí la URL de tu Apps Script
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhLpsLkoA7lSS3qpKaZrpGKhoUfH0bD_z3WAsAewqBLX-ZkLSDwWcow5KRan7j1Kvpsg/exec";
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwhLpsLkoA7lSS3qpKaZrpGKhoUfH0bD_z3WAsAewqBLX-ZkLSDwWcow5KRan7j1Kvpsg/exec
+
+";
 
 // ── ESTADO GLOBAL ──
 let datosEvento = {};
@@ -428,13 +430,12 @@ function procesarFoto() {
   setStep(3);
   window.scrollTo(0, 0);
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accion: "extraer", imagen: base64Foto })
-  })
-  .then(r => r.json())
-  .then(data => {
+  const fd1 = new FormData();
+  fd1.append("payload", JSON.stringify({ accion: "extraer", imagen: base64Foto }));
+  fetch(SCRIPT_URL, { method: "POST", body: fd1 })
+  .then(r => r.text())
+  .then(txt => {
+    const data = JSON.parse(txt);
     document.getElementById("sec-spinner").style.display = "none";
     if (!data.ok) throw new Error(data.error || "Error desconocido");
     mostrarRevision(data.registros);
@@ -443,7 +444,7 @@ function procesarFoto() {
     document.getElementById("sec-spinner").style.display = "none";
     showOnly("sec-foto");
     setStep(2);
-    alert("No se pudo procesar la imagen.\n\nVerifica tu conexión a internet e intenta de nuevo.\n\nError: " + err.message);
+    alert("No se pudo procesar la imagen.\n\nVerifica tu conexión e intenta de nuevo.\n\nError: " + err.message);
   });
 }
 
@@ -511,13 +512,12 @@ function enviarASheets() {
   btn.disabled = true;
   btn.textContent = "Enviando...";
 
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ accion: "guardar", evento: datosEvento, registros })
-  })
-  .then(r => r.json())
-  .then(data => {
+  const fd2 = new FormData();
+  fd2.append("payload", JSON.stringify({ accion: "guardar", evento: datosEvento, registros }));
+  fetch(SCRIPT_URL, { method: "POST", body: fd2 })
+  .then(r => r.text())
+  .then(txt => {
+    const data = JSON.parse(txt);
     if (!data.ok) throw new Error(data.error || "Error al guardar");
     document.getElementById("ok-stat").textContent =
       data.registros + " personas registradas";
